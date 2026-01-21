@@ -484,13 +484,45 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // --- IMPORTANTE: CONFIGURACIÓN PARA GITHUB / DEPLOY ---
+        // Para que esto funcione en GitHub, debes crear un proyecto en Firebase (https://console.firebase.google.com)
+        // y copiar tu configuración aquí abajo.
+        const myFirebaseConfig = {
+            apiKey: "TU_API_KEY_AQUI",
+            authDomain: "tu-proyecto.firebaseapp.com",
+            projectId: "tu-proyecto",
+            storageBucket: "tu-proyecto.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:123456"
+        };
+
+        // Lógica de Selección de Configuración (Automática vs Manual)
+        let firebaseConfig;
+        let appId = 'default-app-id';
+
+        try {
+            // Intenta usar la configuración automática de este editor
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            } else {
+                // Si no existe (ej. GitHub), usa la manual que definiste arriba
+                firebaseConfig = myFirebaseConfig;
+            }
+        } catch (e) {
+            console.warn("Usando configuración manual de respaldo.");
+            firebaseConfig = myFirebaseConfig;
+        }
+
+        // Inicialización Segura
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.error("Error inicializando Firebase. Verifica tu configuración 'myFirebaseConfig'.", error);
+        }
 
         // ESTADO GLOBAL
         let currentUser = null;
@@ -504,6 +536,8 @@
 
         // --- INICIALIZACIÓN ---
         async function initAuth() {
+            if (!auth) return; // Si Firebase falló, no intentar auth
+            
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -512,21 +546,25 @@
                 }
             } catch (error) {
                 console.error("Auth Error", error);
-                showNotification("Error de conexión", "error");
+                // No mostrar alerta intrusiva, solo log
             }
         }
 
         initAuth();
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                startRealtimeListener();
-            }
-        });
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    startRealtimeListener();
+                }
+            });
+        }
 
         // --- FIREBASE LISTENER ---
         function startRealtimeListener() {
+            if (!db) return;
+
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
             
             onSnapshot(colRef, (snapshot) => {
@@ -535,7 +573,7 @@
                     renderTimeSlots(selectedDate);
                 }
             }, (error) => {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching data (Probablemente falta configuración):", error);
             });
         }
 
@@ -680,6 +718,10 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            if (!currentUser && !auth) {
+                 showNotification("Error: Configura Firebase para agendar.", "error");
+                 return;
+            }
             if (!currentUser || !selectedDate || !selectedTime) return;
 
             const loader = document.getElementById('booking-loader');
@@ -782,9 +824,6 @@
                 setTimeout(() => notif.classList.add('hidden'), 500);
             }, 3000);
         }
-
-        // Initialize Calendar immediately if booking view is default (optional)
-        // renderCalendar();
     </script>
 </body>
 </html>
