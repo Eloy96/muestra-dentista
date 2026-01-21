@@ -30,10 +30,6 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -48,37 +44,55 @@
         .animate-float { animation: float 6s ease-in-out infinite; }
         .delay-100 { animation-delay: 0.1s; }
         .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
 
-        /* Estilos de Tarjetas de Fecha (Calendario Mejorado) */
-        .date-card {
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            position: relative;
-            overflow: hidden;
+        /* CALENDARIO ESTILOS (Nuevo) */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
         }
-        .date-card::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: #0d9488;
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-        .date-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-        .date-card.selected { 
-            border-color: #0d9488; 
-            background-color: white; 
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.2), 0 4px 6px -2px rgba(13, 148, 136, 0.1);
-            ring: 2px solid #0d9488;
-        }
-        .date-card.selected::after { transform: scaleX(1); }
         
-        .date-card-header { transition: background-color 0.3s; }
-        .date-card.selected .date-card-header { background-color: #0d9488; color: white; }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px; /* Círculo completo */
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover:not(.disabled):not(.selected) {
+            background-color: #f0fdfa; /* teal-50 */
+            color: #0d9488; /* teal-600 */
+        }
+
+        .calendar-day.selected {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+            transform: scale(1.1);
+        }
+
+        .calendar-day.today {
+            border: 2px solid #0d9488;
+            color: #0d9488;
+        }
+        
+        .calendar-day.today.selected {
+            border: 2px solid #0d9488; /* Mantiene el borde pero cambia fondo */
+            background-color: #0d9488;
+            color: white;
+        }
+
+        .calendar-day.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            background: transparent;
+        }
 
         /* Botones de Hora */
         .slot-btn { transition: all 0.2s; }
@@ -93,39 +107,25 @@
         .slot-btn.taken { 
             background-color: #f1f5f9; 
             color: #cbd5e1; 
-            text-decoration: none; 
+            text-decoration: line-through; 
             cursor: not-allowed; 
             border: 1px dashed #cbd5e1;
             box-shadow: none;
         }
 
-        /* Background Decorativo */
-        .blob-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            overflow: hidden;
-            background: white;
-        }
-        .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-        }
-        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ccfbf1; animation: float 10s infinite alternate; }
-        .blob-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #e0f2fe; animation: float 12s infinite alternate-reverse; }
-
         /* Glassmorphism */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
+        
+        /* Fondo Animado */
+        .blob-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; background: white; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ccfbf1; animation: float 10s infinite alternate; }
+        .blob-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #e0f2fe; animation: float 12s infinite alternate-reverse; }
     </style>
 </head>
 <body class="text-slate-800 antialiased selection:bg-teal-200 selection:text-teal-900">
@@ -136,7 +136,7 @@
         <div class="blob blob-2"></div>
     </div>
 
-    <!-- NOTIFICACIONES (Toast Mejorado) -->
+    <!-- NOTIFICACIONES -->
     <div id="notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] hidden transition-all duration-500 ease-out translate-y-[-100%] opacity-0">
         <div class="px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 glass-panel border-l-4" id="notif-content">
             <div id="notif-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"></div>
@@ -163,7 +163,6 @@
                 <div class="hidden md:flex space-x-8 items-center">
                     <a href="#services" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Tratamientos</a>
                     <a href="#prices" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Precios</a>
-                    <a href="#about" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Nosotros</a>
                     <button onclick="router('booking')" class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-teal-600 transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/30 active:scale-95 flex items-center gap-2">
                         <span>Agendar Cita</span>
                         <i class="fas fa-arrow-right text-xs"></i>
@@ -183,7 +182,6 @@
         <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-xl border-t p-4 flex flex-col space-y-2 shadow-2xl absolute w-full z-40">
             <a href="#services" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Tratamientos</a>
             <a href="#prices" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Precios</a>
-            <a href="#about" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Nosotros</a>
             <button onclick="toggleMenu(); router('booking')" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold shadow-lg mt-2">Agendar Cita Ahora</button>
         </div>
     </nav>
@@ -193,151 +191,83 @@
         
         <!-- VISTA: HOME -->
         <div id="view-home" class="view-section">
-            <!-- Hero Section Mejorada -->
+            <!-- Hero Section -->
             <section class="relative pt-20 pb-32 overflow-hidden">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col lg:flex-row items-center gap-16">
                     <div class="lg:w-1/2 text-center lg:text-left animate-fade-up">
                         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-50 border border-teal-100 text-teal-700 font-semibold text-sm mb-6 shadow-sm">
                             <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-                            Aceptando nuevos pacientes
+                            Agenda Abierta Hoy
                         </div>
                         <h1 class="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1] text-slate-900">
                             Sonríe con <br/>
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-emerald-500">Confianza Total</span>
                         </h1>
                         <p class="text-xl text-slate-500 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                            Descubre una odontología moderna, sin dolor y centrada en ti. Tecnología de vanguardia para la sonrisa que mereces.
+                            Citas en tiempo real, sin llamadas de espera. Tu salud dental a un clic de distancia.
                         </p>
                         <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <button onclick="router('booking')" class="px-8 py-4 bg-slate-900 text-white rounded-full font-bold text-lg hover:bg-teal-600 transition-all shadow-xl hover:shadow-teal-500/20 transform hover:-translate-y-1">
                                 Agendar Visita
                             </button>
-                            <a href="#services" class="px-8 py-4 rounded-full font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm flex items-center justify-center gap-2 group">
-                                <i class="fas fa-play-circle text-teal-500 text-xl group-hover:scale-110 transition-transform"></i>
-                                Ver Servicios
-                            </a>
-                        </div>
-                        
-                        <div class="mt-12 flex items-center justify-center lg:justify-start gap-8 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-                            <div class="flex items-center gap-2"><i class="fas fa-star text-yellow-400"></i> <span class="font-bold text-slate-800">4.9/5</span> en Google</div>
-                            <div class="h-4 w-[1px] bg-slate-300"></div>
-                            <div>+2,000 Pacientes</div>
                         </div>
                     </div>
                     
                     <div class="lg:w-1/2 relative animate-fade-up delay-200">
                         <div class="relative w-full max-w-lg mx-auto aspect-square">
                             <div class="absolute inset-0 bg-gradient-to-tr from-teal-100 to-blue-100 rounded-full filter blur-3xl opacity-60 animate-pulse"></div>
-                            <!-- Ilustración Abstracta 3D CSS -->
                             <div class="relative z-10 w-full h-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/50 glass-panel flex items-center justify-center animate-float">
                                 <div class="text-center p-8">
                                      <div class="w-32 h-32 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                        <i class="fas fa-tooth text-6xl text-teal-500 drop-shadow-md"></i>
+                                        <i class="fas fa-calendar-check text-6xl text-teal-500 drop-shadow-md"></i>
                                      </div>
-                                     <h3 class="text-2xl font-bold text-slate-800 mb-2">Salud Dental 360°</h3>
-                                     <p class="text-slate-500">Escaneos digitales, limpieza ultrasónica y más.</p>
+                                     <h3 class="text-2xl font-bold text-slate-800 mb-2">Reserva Online</h3>
+                                     <p class="text-slate-500">Selecciona tu horario y confirma al instante.</p>
                                 </div>
-                                <!-- Decorative Circles -->
-                                <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full -mr-10 -mt-10"></div>
-                                <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full -ml-8 -mb-8"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Servicios con Cards Glassmorphism -->
+            <!-- Servicios -->
             <section id="services" class="py-24 bg-white/50 relative">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="text-center mb-16 max-w-3xl mx-auto">
-                        <span class="text-teal-600 font-bold tracking-wider uppercase text-xs bg-teal-50 px-3 py-1 rounded-full border border-teal-100">Excelencia Médica</span>
-                        <h2 class="text-3xl lg:text-4xl font-bold text-slate-900 mt-4 mb-4">Tratamientos diseñados para ti</h2>
-                        <p class="text-slate-500 text-lg">Combinamos estética y funcionalidad para resultados duraderos.</p>
+                    <div class="text-center mb-16">
+                        <h2 class="text-3xl font-bold text-slate-900">Servicios Destacados</h2>
                     </div>
-                    
                     <div class="grid md:grid-cols-3 gap-8">
-                        <!-- Card 1 -->
-                        <div class="group bg-white p-8 rounded-3xl shadow-lg border border-slate-100 hover:shadow-2xl hover:shadow-teal-500/10 transition-all duration-300 hover:-translate-y-2">
-                            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-shield-alt text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-3">Limpieza & Prevención</h3>
-                            <p class="text-slate-500 text-sm mb-6 leading-relaxed">Elimina manchas y sarro con nuestra tecnología ultrasónica indolora.</p>
-                            <div class="text-2xl font-bold text-teal-600 mb-6">$500 <span class="text-xs font-normal text-slate-400">/ sesión</span></div>
-                            <ul class="space-y-3 mb-6">
-                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Diagnóstico HD</li>
-                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Fluorización</li>
-                            </ul>
+                        <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
+                            <i class="fas fa-shield-alt text-4xl text-teal-500 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-2">Limpieza</h3>
+                            <p class="text-slate-500">Tecnología ultrasónica sin dolor.</p>
                         </div>
-                         <!-- Card 2 -->
-                         <div class="group bg-slate-900 p-8 rounded-3xl shadow-xl shadow-slate-900/20 hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
-                            <div class="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                            <div class="w-14 h-14 bg-teal-500/20 rounded-2xl flex items-center justify-center mb-6 text-teal-400">
-                                <i class="fas fa-magic text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-3">Ortodoncia Invisible</h3>
-                            <p class="text-slate-400 text-sm mb-6 leading-relaxed">Alinea tu sonrisa sin que nadie lo note. Certificados en Invisalign.</p>
-                            <div class="text-2xl font-bold text-white mb-6">Consulta Gratis</div>
-                            <ul class="space-y-3 mb-6 relative z-10">
-                                <li class="flex items-center text-sm text-slate-300"><i class="fas fa-check text-teal-400 mr-3"></i>Escaneo 3D</li>
-                                <li class="flex items-center text-sm text-slate-300"><i class="fas fa-check text-teal-400 mr-3"></i>Sin metales</li>
-                            </ul>
+                        <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
+                            <i class="fas fa-tooth text-4xl text-teal-500 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-2">Blanqueamiento</h3>
+                            <p class="text-slate-500">Resultados visibles en 1 sesión.</p>
                         </div>
-                         <!-- Card 3 -->
-                         <div class="group bg-white p-8 rounded-3xl shadow-lg border border-slate-100 hover:shadow-2xl hover:shadow-teal-500/10 transition-all duration-300 hover:-translate-y-2">
-                            <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-gem text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-3">Implantes Premium</h3>
-                            <p class="text-slate-500 text-sm mb-6 leading-relaxed">Recupera la funcionalidad completa con materiales biocompatibles.</p>
-                            <div class="text-2xl font-bold text-teal-600 mb-6">Personalizado</div>
-                            <ul class="space-y-3 mb-6">
-                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Titanio grado médico</li>
-                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Garantía escrita</li>
-                            </ul>
+                        <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
+                            <i class="fas fa-child text-4xl text-teal-500 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-2">Odontopediatría</h3>
+                            <p class="text-slate-500">Especialistas en niños.</p>
                         </div>
                     </div>
                 </div>
             </section>
-
-            <!-- Tabla de Precios -->
+            
+            <!-- Precios -->
             <section id="prices" class="py-24 bg-slate-50">
-                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="text-center mb-12">
-                        <h2 class="text-3xl font-bold text-slate-900">Transparencia Total</h2>
-                        <p class="text-slate-500 mt-4">Precios claros, sin letras chiquitas.</p>
+                <div class="max-w-4xl mx-auto px-4">
+                     <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-slate-900">Precios Transparentes</h2>
                     </div>
-
-                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
                         <table class="w-full text-left">
-                            <thead class="bg-slate-50 border-b border-slate-100">
-                                <tr>
-                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider">Tratamiento</th>
-                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider hidden sm:table-cell">Duración</th>
-                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider text-right">Inversión</th>
-                                </tr>
-                            </thead>
                             <tbody class="divide-y divide-slate-100">
-                                <tr class="hover:bg-teal-50/50 transition-colors group">
-                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Consulta General + Radiografía</td>
-                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">30 min</td>
-                                    <td class="p-6 text-right font-bold text-slate-800">$300</td>
-                                </tr>
-                                <tr class="hover:bg-teal-50/50 transition-colors group">
-                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Limpieza Ultrasónica Profunda</td>
-                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">45 min</td>
-                                    <td class="p-6 text-right font-bold text-slate-800">$600</td>
-                                </tr>
-                                <tr class="hover:bg-teal-50/50 transition-colors group">
-                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Resina Estética (Empaste)</td>
-                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">45 min</td>
-                                    <td class="p-6 text-right font-bold text-slate-800">$500</td>
-                                </tr>
-                                <tr class="hover:bg-teal-50/50 transition-colors group">
-                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Blanqueamiento LED</td>
-                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">60 min</td>
-                                    <td class="p-6 text-right font-bold text-slate-800">$2,500</td>
-                                </tr>
+                                <tr class="hover:bg-teal-50"><td class="p-6">Consulta</td><td class="p-6 text-right font-bold text-teal-600">$300</td></tr>
+                                <tr class="hover:bg-teal-50"><td class="p-6">Limpieza</td><td class="p-6 text-right font-bold text-teal-600">$600</td></tr>
+                                <tr class="hover:bg-teal-50"><td class="p-6">Resina</td><td class="p-6 text-right font-bold text-teal-600">$500</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -345,8 +275,8 @@
             </section>
         </div>
 
-        <!-- VISTA: BOOKING (SISTEMA DE CITAS REDISEÑADO) -->
-        <div id="view-booking" class="view-section hidden fade-in max-w-5xl mx-auto px-4 py-12">
+        <!-- VISTA: BOOKING (CALENDARIO COMPLETO) -->
+        <div id="view-booking" class="view-section hidden fade-in max-w-6xl mx-auto px-4 py-8 lg:py-12">
             
             <button onclick="router('home')" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-colors">
                 <i class="fas fa-arrow-left"></i> Volver al inicio
@@ -356,107 +286,82 @@
                 <!-- Loader -->
                 <div id="booking-loader" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center hidden">
                     <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-teal-600 mb-4"></div>
-                    <p class="text-slate-600 font-medium animate-pulse">Sincronizando agenda...</p>
+                    <p class="text-slate-600 font-medium animate-pulse">Procesando...</p>
                 </div>
 
-                <div class="grid lg:grid-cols-5 min-h-[600px]">
-                    <!-- Sidebar Informativo -->
-                    <div class="lg:col-span-2 bg-slate-900 text-white p-8 lg:p-10 flex flex-col justify-between relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                        
-                        <div class="relative z-10">
-                            <h2 class="text-3xl font-bold mb-4">Agenda tu Cita</h2>
-                            <p class="text-slate-400 leading-relaxed mb-8">
-                                Nuestro sistema en tiempo real te permite asegurar tu espacio al instante.
-                            </p>
-                            
-                            <div class="space-y-6">
-                                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                                    <div class="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">1</div>
-                                    <div>
-                                        <h4 class="font-semibold text-sm">Elige una fecha</h4>
-                                        <p class="text-xs text-slate-400 mt-1">Revisamos disponibilidad al momento.</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                                    <div class="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">2</div>
-                                    <div>
-                                        <h4 class="font-semibold text-sm">Confirma tus datos</h4>
-                                        <p class="text-xs text-slate-400 mt-1">Te enviaremos un recordatorio.</p>
-                                    </div>
-                                </div>
+                <div class="grid lg:grid-cols-12 min-h-[600px]">
+                    <!-- COLUMNA IZQUIERDA: CALENDARIO -->
+                    <div class="lg:col-span-7 p-6 lg:p-10 border-r border-slate-100 bg-white">
+                        <div class="flex items-center justify-between mb-8">
+                            <h2 class="text-2xl font-bold text-slate-800">Selecciona Fecha</h2>
+                            <div class="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+                                <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-slate-600 transition-all">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </button>
+                                <span id="current-month-label" class="text-sm font-bold text-slate-700 min-w-[120px] text-center capitalize"></span>
+                                <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-slate-600 transition-all">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="mt-8 relative z-10">
-                            <div class="flex items-center gap-3 text-sm text-slate-400">
-                                <i class="fas fa-shield-alt text-teal-500"></i>
-                                <span>Tus datos están protegidos</span>
-                            </div>
+                        <!-- Días de la semana -->
+                        <div class="grid grid-cols-7 gap-1 mb-2 text-center">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Dom</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Lun</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Mar</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Mié</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Jue</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Vie</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Sáb</div>
+                        </div>
+
+                        <!-- Grilla de Días -->
+                        <div id="calendar-grid" class="calendar-grid">
+                            <!-- JS inyectará los días -->
+                        </div>
+
+                        <div class="mt-8 flex gap-4 text-xs text-slate-500 justify-center">
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border-2 border-teal-600"></div> Hoy</div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-teal-600"></div> Seleccionado</div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-slate-200"></div> No Disponible</div>
                         </div>
                     </div>
 
-                    <!-- Área Interactiva -->
-                    <div class="lg:col-span-3 p-6 lg:p-10 bg-white relative">
+                    <!-- COLUMNA DERECHA: HORARIOS Y FORMULARIO -->
+                    <div class="lg:col-span-5 bg-slate-50 p-6 lg:p-10 flex flex-col">
                         
-                        <!-- Paso 1: Fechas (Calendario) -->
-                        <div class="mb-10 animate-fade-up">
-                            <div class="flex justify-between items-end mb-6">
-                                <h3 class="text-lg font-bold text-slate-800">Selecciona un día</h3>
-                                <div class="flex gap-2">
-                                    <button onclick="scrollDates('left')" class="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
-                                    <button onclick="scrollDates('right')" class="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
-                                </div>
-                            </div>
-                            
-                            <div id="dates-container" class="flex overflow-x-auto pb-6 -mx-2 px-2 gap-4 no-scrollbar snap-x scroll-smooth">
-                                <!-- JS inyectará las fechas aquí -->
-                            </div>
+                        <!-- Estado Inicial -->
+                        <div id="empty-state" class="flex-grow flex flex-col items-center justify-center text-center p-6 opacity-60">
+                            <i class="far fa-calendar-alt text-6xl text-slate-300 mb-4"></i>
+                            <p class="text-slate-500">Selecciona un día en el calendario para ver la disponibilidad.</p>
                         </div>
 
-                        <!-- Paso 2: Horarios -->
-                        <div id="time-section" class="mb-10 hidden opacity-0 transition-opacity duration-500">
-                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center justify-between">
-                                <span>Horarios Disponibles</span>
-                                <span class="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-1 rounded">Zona Horaria Local</span>
-                            </h3>
-                            <div id="slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                                <!-- JS inyectará los horarios aquí -->
+                        <!-- Contenedor de Horarios -->
+                        <div id="time-section" class="hidden animate-fade-up">
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-1">Horarios Disponibles</h3>
+                                <p id="selected-date-label" class="text-sm text-teal-600 font-medium capitalize"></p>
                             </div>
-                            <div class="mt-4 flex items-center gap-6 text-xs text-slate-400">
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full border border-slate-300 bg-white"></span> Libre</div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-teal-600"></span> Seleccionado</div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-200 opacity-50"></span> Ocupado</div>
-                            </div>
-                        </div>
 
-                        <!-- Paso 3: Formulario -->
-                        <form id="booking-form" class="hidden opacity-0 transition-all duration-500">
-                            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
-                                <h3 class="text-lg font-bold text-slate-800 mb-4">Finalizar Reserva</h3>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre Completo</label>
-                                        <input required type="text" id="input-name" placeholder="Ej. Ana García" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Teléfono</label>
-                                        <input required type="tel" id="input-phone" placeholder="Ej. 55 1234 5678" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Motivo (Opcional)</label>
-                                        <input type="text" id="input-reason" placeholder="Limpieza, Dolor, Revisión..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
-                                    </div>
-                                </div>
+                            <div id="slots-container" class="grid grid-cols-3 gap-3 mb-8">
+                                <!-- JS Inyectará Slots -->
                             </div>
-                            
-                            <div class="flex gap-4">
-                                <button type="button" onclick="resetBookingUI()" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">Cancelar</button>
-                                <button type="submit" class="flex-grow bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1">
-                                    Confirmar Cita
+
+                            <!-- Formulario (aparece al seleccionar hora) -->
+                            <form id="booking-form" class="hidden animate-fade-up pt-6 border-t border-slate-200">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4">Confirmar Cita</h3>
+                                <div class="space-y-4 mb-6">
+                                    <input required type="text" id="input-name" placeholder="Nombre Completo" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <input required type="tel" id="input-phone" placeholder="Teléfono" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <input type="text" id="input-reason" placeholder="Motivo (Opcional)" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                                </div>
+                                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1">
+                                    Reservar Ahora
                                 </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -484,63 +389,6 @@
 
     </main>
 
-    <!-- FOOTER -->
-    <footer id="about" class="bg-slate-900 text-white pt-20 pb-10 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-12 mb-16">
-                <div class="col-span-2">
-                    <h3 class="text-3xl font-bold mb-6 flex items-center gap-2">
-                        <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center"><i class="fas fa-tooth text-xl"></i></div>
-                        DentCare
-                    </h3>
-                    <p class="text-slate-400 mb-8 max-w-sm leading-relaxed">
-                        Transformamos la experiencia dental con tecnología humana y espacios diseñados para tu calma.
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-whatsapp"></i></a>
-                    </div>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold text-lg mb-6">Contacto</h4>
-                    <ul class="space-y-4 text-slate-400">
-                        <li class="flex items-start gap-3">
-                            <i class="fas fa-map-marker-alt text-teal-500 mt-1"></i>
-                            <span>Av. Reforma 222, Piso 10<br/>Ciudad de México</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-phone text-teal-500"></i>
-                            <span>(55) 1234 - 5678</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-envelope text-teal-500"></i>
-                            <span>hola@dentcare.mx</span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold text-lg mb-6">Horarios</h4>
-                    <ul class="space-y-3 text-slate-400">
-                        <li class="flex justify-between border-b border-slate-800 pb-2"><span>Lun - Vie</span><span class="text-white">9:00 - 18:00</span></li>
-                        <li class="flex justify-between border-b border-slate-800 pb-2"><span>Sábados</span><span class="text-white">9:00 - 14:00</span></li>
-                        <li class="flex justify-between pb-2"><span>Domingos</span><span class="text-teal-500">Cerrado</span></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
-                <p>&copy; 2024 DentCare Clínica Dental. Todos los derechos reservados.</p>
-                <div class="flex gap-6 mt-4 md:mt-0">
-                    <a href="#" class="hover:text-white transition-colors">Privacidad</a>
-                    <a href="#" class="hover:text-white transition-colors">Términos</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
     <!-- FIREBASE & LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -560,6 +408,10 @@
         let allAppointments = [];
         let selectedDate = null;
         let selectedTime = null;
+        
+        // Estado del Calendario
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
 
         // --- INICIALIZACIÓN ---
         async function initAuth() {
@@ -598,69 +450,89 @@
             });
         }
 
-        // --- UI RENDER FUNCTIONS ---
+        // --- CALENDAR LOGIC (NUEVA) ---
 
-        function renderDates() {
-            const container = document.getElementById('dates-container');
-            container.innerHTML = '';
-            
-            const today = new Date();
-            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-            for (let i = 0; i < 14; i++) {
-                const d = new Date(today);
-                d.setDate(today.getDate() + i);
-                
-                if (d.getDay() === 0) continue; 
-
-                const dateStr = d.toISOString().split('T')[0];
-                const dayName = days[d.getDay()];
-                const dayNum = d.getDate();
-                const monthName = months[d.getMonth()];
-
-                const btn = document.createElement('button');
-                btn.className = `date-card group flex-shrink-0 w-24 h-32 rounded-2xl bg-white border border-slate-100 flex flex-col items-center justify-between snap-center cursor-pointer overflow-hidden`;
-                
-                // Diseño de "Hoja de Calendario"
-                btn.innerHTML = `
-                    <div class="date-card-header w-full py-2 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider text-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
-                        ${monthName}
-                    </div>
-                    <div class="flex-grow flex flex-col items-center justify-center py-2">
-                        <span class="text-3xl font-bold text-slate-800 group-hover:text-teal-600 transition-colors">${dayNum}</span>
-                        <span class="text-xs font-medium text-slate-400 mt-1">${dayName}</span>
-                    </div>
-                `;
-                
-                btn.onclick = () => selectDate(dateStr, btn);
-                btn.dataset.date = dateStr;
-                container.appendChild(btn);
+        window.changeMonth = function(direction) {
+            currentMonth += direction;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
             }
+            renderCalendar();
         }
 
-        window.scrollDates = function(direction) {
-            const container = document.getElementById('dates-container');
-            const scrollAmount = 200;
-            if (direction === 'left') container.scrollLeft -= scrollAmount;
-            else container.scrollLeft += scrollAmount;
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const label = document.getElementById('current-month-label');
+            grid.innerHTML = '';
+
+            const date = new Date(currentYear, currentMonth, 1);
+            const monthName = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            label.textContent = monthName;
+
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = date.getDay(); // 0 = Domingo
+
+            // Celdas vacías antes del primer día
+            for (let i = 0; i < startDay; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            // Días del mes
+            for (let i = 1; i <= daysInMonth; i++) {
+                const d = new Date(currentYear, currentMonth, i);
+                const isSunday = d.getDay() === 0;
+                const isPast = d < today;
+                const dateStr = d.toISOString().split('T')[0];
+
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = i;
+
+                // Estilos por estado
+                if (d.getTime() === today.getTime()) {
+                    dayEl.classList.add('today');
+                }
+
+                if (isSunday || isPast) {
+                    dayEl.classList.add('disabled');
+                } else {
+                    dayEl.onclick = () => selectDate(dateStr, dayEl);
+                    if (selectedDate === dateStr) {
+                        dayEl.classList.add('selected');
+                    }
+                }
+
+                grid.appendChild(dayEl);
+            }
         }
 
         window.selectDate = function(dateStr, btnElement) {
             selectedDate = dateStr;
             selectedTime = null;
             
-            document.querySelectorAll('.date-card').forEach(b => b.classList.remove('selected'));
+            // Visual Updates
+            document.querySelectorAll('.calendar-day').forEach(b => b.classList.remove('selected'));
             btnElement.classList.add('selected');
 
+            // Mostrar Panel Derecho
+            document.getElementById('empty-state').classList.add('hidden');
             const timeSection = document.getElementById('time-section');
             timeSection.classList.remove('hidden');
-            setTimeout(() => {
-                timeSection.classList.remove('opacity-0');
-                timeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
             
-            document.getElementById('booking-form').classList.add('hidden', 'opacity-0');
+            // Formatear fecha para label
+            const dateObj = new Date(dateStr + 'T00:00:00'); // Fix Timezone
+            document.getElementById('selected-date-label').textContent = dateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            // Ocultar formulario
+            document.getElementById('booking-form').classList.add('hidden');
 
             renderTimeSlots(dateStr);
         }
@@ -671,16 +543,15 @@
 
             const times = ["09:00", "10:00", "11:00", "12:00", "13:00", "15:00", "16:00", "17:00", "18:00"];
 
-            // Fade in animation for slots
             let delay = 0;
 
             times.forEach(time => {
                 const isTaken = allAppointments.some(appt => appt.date === dateStr && appt.time === time);
                 
                 const btn = document.createElement('button');
-                btn.className = `slot-btn py-3 px-4 rounded-xl text-sm font-bold border border-slate-200 bg-white text-slate-600 w-full animate-fade-up`;
+                btn.className = `slot-btn py-3 rounded-lg text-sm font-bold border border-slate-200 bg-white text-slate-600 w-full animate-fade-up`;
                 btn.style.animationDelay = `${delay}ms`;
-                delay += 50;
+                delay += 30;
 
                 if (isTaken) {
                     btn.classList.add('taken');
@@ -707,10 +578,11 @@
 
             const form = document.getElementById('booking-form');
             form.classList.remove('hidden');
-            setTimeout(() => {
-                form.classList.remove('opacity-0');
-                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            
+            // Auto scroll suave al formulario en mobile
+            if(window.innerWidth < 1024) {
+                 form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         // --- SUBMIT ---
@@ -771,7 +643,7 @@
             }
 
             if (viewName === 'booking') {
-                renderDates();
+                renderCalendar(); // Renderizar calendario al entrar
             }
         }
 
@@ -786,6 +658,7 @@
             document.getElementById('booking-form').reset();
             document.getElementById('booking-form').classList.add('hidden');
             document.getElementById('time-section').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
         }
 
         window.showNotification = function(msg, type = 'info') {
@@ -820,8 +693,8 @@
             }, 3000);
         }
 
-        // Start App
-        renderDates();
+        // Start App Initial State
+        // No auto-render dates to avoid processing before view
     </script>
 </body>
 </html>
