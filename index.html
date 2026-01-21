@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DentCare - Clínica Dental Premium</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para Íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
+            overflow-x: hidden;
+        }
+        
+        /* Ocultar scrollbar pero permitir scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animaciones Custom */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .animate-fade-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+
+        /* Estilos de Tarjetas de Fecha (Calendario Mejorado) */
+        .date-card {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .date-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #0d9488;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .date-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .date-card.selected { 
+            border-color: #0d9488; 
+            background-color: white; 
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.2), 0 4px 6px -2px rgba(13, 148, 136, 0.1);
+            ring: 2px solid #0d9488;
+        }
+        .date-card.selected::after { transform: scaleX(1); }
+        
+        .date-card-header { transition: background-color 0.3s; }
+        .date-card.selected .date-card-header { background-color: #0d9488; color: white; }
+
+        /* Botones de Hora */
+        .slot-btn { transition: all 0.2s; }
+        .slot-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .slot-btn.selected { 
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); 
+            color: white; 
+            border: none;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+            animation: pulse-soft 2s infinite;
+        }
+        .slot-btn.taken { 
+            background-color: #f1f5f9; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            cursor: not-allowed; 
+            border: 1px dashed #cbd5e1;
+            box-shadow: none;
+        }
+
+        /* Background Decorativo */
+        .blob-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: white;
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ccfbf1; animation: float 10s infinite alternate; }
+        .blob-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #e0f2fe; animation: float 12s infinite alternate-reverse; }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-teal-200 selection:text-teal-900">
+
+    <!-- Fondo Animado -->
+    <div class="blob-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- NOTIFICACIONES (Toast Mejorado) -->
+    <div id="notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] hidden transition-all duration-500 ease-out translate-y-[-100%] opacity-0">
+        <div class="px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 glass-panel border-l-4" id="notif-content">
+            <div id="notif-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"></div>
+            <div>
+                <h4 class="font-bold text-sm" id="notif-title">Notificación</h4>
+                <p class="text-sm opacity-90" id="notif-message">Mensaje</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="fixed w-full bg-white/80 backdrop-blur-lg z-50 border-b border-white/20 shadow-sm transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer group" onclick="router('home')">
+                    <div class="bg-gradient-to-br from-teal-500 to-teal-700 text-white p-2.5 rounded-xl shadow-lg shadow-teal-500/30 transition-transform group-hover:scale-110">
+                        <i class="fas fa-tooth text-xl"></i>
+                    </div>
+                    <span class="font-extrabold text-2xl tracking-tight text-slate-800">Dent<span class="text-teal-600">Care</span></span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#services" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Tratamientos</a>
+                    <a href="#prices" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Precios</a>
+                    <a href="#about" onclick="router('home')" class="text-slate-600 hover:text-teal-600 font-medium transition-colors hover:bg-teal-50 px-3 py-2 rounded-lg">Nosotros</a>
+                    <button onclick="router('booking')" class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-teal-600 transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/30 active:scale-95 flex items-center gap-2">
+                        <span>Agendar Cita</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMenu()" class="text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-xl border-t p-4 flex flex-col space-y-2 shadow-2xl absolute w-full z-40">
+            <a href="#services" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Tratamientos</a>
+            <a href="#prices" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Precios</a>
+            <a href="#about" onclick="toggleMenu(); router('home')" class="block p-4 rounded-xl hover:bg-teal-50 text-slate-700 font-medium">Nosotros</a>
+            <button onclick="toggleMenu(); router('booking')" class="w-full bg-teal-600 text-white p-4 rounded-xl font-bold shadow-lg mt-2">Agendar Cita Ahora</button>
+        </div>
+    </nav>
+
+    <!-- CONTENEDOR DE VISTAS -->
+    <main class="pt-20 min-h-screen">
+        
+        <!-- VISTA: HOME -->
+        <div id="view-home" class="view-section">
+            <!-- Hero Section Mejorada -->
+            <section class="relative pt-20 pb-32 overflow-hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+                    <div class="lg:w-1/2 text-center lg:text-left animate-fade-up">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-50 border border-teal-100 text-teal-700 font-semibold text-sm mb-6 shadow-sm">
+                            <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                            Aceptando nuevos pacientes
+                        </div>
+                        <h1 class="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1] text-slate-900">
+                            Sonríe con <br/>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-emerald-500">Confianza Total</span>
+                        </h1>
+                        <p class="text-xl text-slate-500 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                            Descubre una odontología moderna, sin dolor y centrada en ti. Tecnología de vanguardia para la sonrisa que mereces.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <button onclick="router('booking')" class="px-8 py-4 bg-slate-900 text-white rounded-full font-bold text-lg hover:bg-teal-600 transition-all shadow-xl hover:shadow-teal-500/20 transform hover:-translate-y-1">
+                                Agendar Visita
+                            </button>
+                            <a href="#services" class="px-8 py-4 rounded-full font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm flex items-center justify-center gap-2 group">
+                                <i class="fas fa-play-circle text-teal-500 text-xl group-hover:scale-110 transition-transform"></i>
+                                Ver Servicios
+                            </a>
+                        </div>
+                        
+                        <div class="mt-12 flex items-center justify-center lg:justify-start gap-8 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+                            <div class="flex items-center gap-2"><i class="fas fa-star text-yellow-400"></i> <span class="font-bold text-slate-800">4.9/5</span> en Google</div>
+                            <div class="h-4 w-[1px] bg-slate-300"></div>
+                            <div>+2,000 Pacientes</div>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:w-1/2 relative animate-fade-up delay-200">
+                        <div class="relative w-full max-w-lg mx-auto aspect-square">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-teal-100 to-blue-100 rounded-full filter blur-3xl opacity-60 animate-pulse"></div>
+                            <!-- Ilustración Abstracta 3D CSS -->
+                            <div class="relative z-10 w-full h-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/50 glass-panel flex items-center justify-center animate-float">
+                                <div class="text-center p-8">
+                                     <div class="w-32 h-32 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                        <i class="fas fa-tooth text-6xl text-teal-500 drop-shadow-md"></i>
+                                     </div>
+                                     <h3 class="text-2xl font-bold text-slate-800 mb-2">Salud Dental 360°</h3>
+                                     <p class="text-slate-500">Escaneos digitales, limpieza ultrasónica y más.</p>
+                                </div>
+                                <!-- Decorative Circles -->
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full -mr-10 -mt-10"></div>
+                                <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full -ml-8 -mb-8"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Servicios con Cards Glassmorphism -->
+            <section id="services" class="py-24 bg-white/50 relative">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-16 max-w-3xl mx-auto">
+                        <span class="text-teal-600 font-bold tracking-wider uppercase text-xs bg-teal-50 px-3 py-1 rounded-full border border-teal-100">Excelencia Médica</span>
+                        <h2 class="text-3xl lg:text-4xl font-bold text-slate-900 mt-4 mb-4">Tratamientos diseñados para ti</h2>
+                        <p class="text-slate-500 text-lg">Combinamos estética y funcionalidad para resultados duraderos.</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <!-- Card 1 -->
+                        <div class="group bg-white p-8 rounded-3xl shadow-lg border border-slate-100 hover:shadow-2xl hover:shadow-teal-500/10 transition-all duration-300 hover:-translate-y-2">
+                            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-shield-alt text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-3">Limpieza & Prevención</h3>
+                            <p class="text-slate-500 text-sm mb-6 leading-relaxed">Elimina manchas y sarro con nuestra tecnología ultrasónica indolora.</p>
+                            <div class="text-2xl font-bold text-teal-600 mb-6">$500 <span class="text-xs font-normal text-slate-400">/ sesión</span></div>
+                            <ul class="space-y-3 mb-6">
+                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Diagnóstico HD</li>
+                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Fluorización</li>
+                            </ul>
+                        </div>
+                         <!-- Card 2 -->
+                         <div class="group bg-slate-900 p-8 rounded-3xl shadow-xl shadow-slate-900/20 hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <div class="w-14 h-14 bg-teal-500/20 rounded-2xl flex items-center justify-center mb-6 text-teal-400">
+                                <i class="fas fa-magic text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-3">Ortodoncia Invisible</h3>
+                            <p class="text-slate-400 text-sm mb-6 leading-relaxed">Alinea tu sonrisa sin que nadie lo note. Certificados en Invisalign.</p>
+                            <div class="text-2xl font-bold text-white mb-6">Consulta Gratis</div>
+                            <ul class="space-y-3 mb-6 relative z-10">
+                                <li class="flex items-center text-sm text-slate-300"><i class="fas fa-check text-teal-400 mr-3"></i>Escaneo 3D</li>
+                                <li class="flex items-center text-sm text-slate-300"><i class="fas fa-check text-teal-400 mr-3"></i>Sin metales</li>
+                            </ul>
+                        </div>
+                         <!-- Card 3 -->
+                         <div class="group bg-white p-8 rounded-3xl shadow-lg border border-slate-100 hover:shadow-2xl hover:shadow-teal-500/10 transition-all duration-300 hover:-translate-y-2">
+                            <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-gem text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-3">Implantes Premium</h3>
+                            <p class="text-slate-500 text-sm mb-6 leading-relaxed">Recupera la funcionalidad completa con materiales biocompatibles.</p>
+                            <div class="text-2xl font-bold text-teal-600 mb-6">Personalizado</div>
+                            <ul class="space-y-3 mb-6">
+                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Titanio grado médico</li>
+                                <li class="flex items-center text-sm text-slate-600"><i class="fas fa-check text-teal-500 mr-3"></i>Garantía escrita</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabla de Precios -->
+            <section id="prices" class="py-24 bg-slate-50">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-slate-900">Transparencia Total</h2>
+                        <p class="text-slate-500 mt-4">Precios claros, sin letras chiquitas.</p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider">Tratamiento</th>
+                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider hidden sm:table-cell">Duración</th>
+                                    <th class="p-6 text-slate-500 font-semibold text-sm uppercase tracking-wider text-right">Inversión</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-teal-50/50 transition-colors group">
+                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Consulta General + Radiografía</td>
+                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">30 min</td>
+                                    <td class="p-6 text-right font-bold text-slate-800">$300</td>
+                                </tr>
+                                <tr class="hover:bg-teal-50/50 transition-colors group">
+                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Limpieza Ultrasónica Profunda</td>
+                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">45 min</td>
+                                    <td class="p-6 text-right font-bold text-slate-800">$600</td>
+                                </tr>
+                                <tr class="hover:bg-teal-50/50 transition-colors group">
+                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Resina Estética (Empaste)</td>
+                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">45 min</td>
+                                    <td class="p-6 text-right font-bold text-slate-800">$500</td>
+                                </tr>
+                                <tr class="hover:bg-teal-50/50 transition-colors group">
+                                    <td class="p-6 font-medium text-slate-800 group-hover:text-teal-700">Blanqueamiento LED</td>
+                                    <td class="p-6 text-slate-500 text-sm hidden sm:table-cell">60 min</td>
+                                    <td class="p-6 text-right font-bold text-slate-800">$2,500</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VISTA: BOOKING (SISTEMA DE CITAS REDISEÑADO) -->
+        <div id="view-booking" class="view-section hidden fade-in max-w-5xl mx-auto px-4 py-12">
+            
+            <button onclick="router('home')" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-colors">
+                <i class="fas fa-arrow-left"></i> Volver al inicio
+            </button>
+
+            <div class="glass-panel rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-white">
+                <!-- Loader -->
+                <div id="booking-loader" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-teal-600 mb-4"></div>
+                    <p class="text-slate-600 font-medium animate-pulse">Sincronizando agenda...</p>
+                </div>
+
+                <div class="grid lg:grid-cols-5 min-h-[600px]">
+                    <!-- Sidebar Informativo -->
+                    <div class="lg:col-span-2 bg-slate-900 text-white p-8 lg:p-10 flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                        
+                        <div class="relative z-10">
+                            <h2 class="text-3xl font-bold mb-4">Agenda tu Cita</h2>
+                            <p class="text-slate-400 leading-relaxed mb-8">
+                                Nuestro sistema en tiempo real te permite asegurar tu espacio al instante.
+                            </p>
+                            
+                            <div class="space-y-6">
+                                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <div class="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">1</div>
+                                    <div>
+                                        <h4 class="font-semibold text-sm">Elige una fecha</h4>
+                                        <p class="text-xs text-slate-400 mt-1">Revisamos disponibilidad al momento.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <div class="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">2</div>
+                                    <div>
+                                        <h4 class="font-semibold text-sm">Confirma tus datos</h4>
+                                        <p class="text-xs text-slate-400 mt-1">Te enviaremos un recordatorio.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 relative z-10">
+                            <div class="flex items-center gap-3 text-sm text-slate-400">
+                                <i class="fas fa-shield-alt text-teal-500"></i>
+                                <span>Tus datos están protegidos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área Interactiva -->
+                    <div class="lg:col-span-3 p-6 lg:p-10 bg-white relative">
+                        
+                        <!-- Paso 1: Fechas (Calendario) -->
+                        <div class="mb-10 animate-fade-up">
+                            <div class="flex justify-between items-end mb-6">
+                                <h3 class="text-lg font-bold text-slate-800">Selecciona un día</h3>
+                                <div class="flex gap-2">
+                                    <button onclick="scrollDates('left')" class="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
+                                    <button onclick="scrollDates('right')" class="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                                </div>
+                            </div>
+                            
+                            <div id="dates-container" class="flex overflow-x-auto pb-6 -mx-2 px-2 gap-4 no-scrollbar snap-x scroll-smooth">
+                                <!-- JS inyectará las fechas aquí -->
+                            </div>
+                        </div>
+
+                        <!-- Paso 2: Horarios -->
+                        <div id="time-section" class="mb-10 hidden opacity-0 transition-opacity duration-500">
+                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center justify-between">
+                                <span>Horarios Disponibles</span>
+                                <span class="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-1 rounded">Zona Horaria Local</span>
+                            </h3>
+                            <div id="slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                <!-- JS inyectará los horarios aquí -->
+                            </div>
+                            <div class="mt-4 flex items-center gap-6 text-xs text-slate-400">
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full border border-slate-300 bg-white"></span> Libre</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-teal-600"></span> Seleccionado</div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-200 opacity-50"></span> Ocupado</div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 3: Formulario -->
+                        <form id="booking-form" class="hidden opacity-0 transition-all duration-500">
+                            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4">Finalizar Reserva</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre Completo</label>
+                                        <input required type="text" id="input-name" placeholder="Ej. Ana García" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Teléfono</label>
+                                        <input required type="tel" id="input-phone" placeholder="Ej. 55 1234 5678" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Motivo (Opcional)</label>
+                                        <input type="text" id="input-reason" placeholder="Limpieza, Dolor, Revisión..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4">
+                                <button type="button" onclick="resetBookingUI()" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">Cancelar</button>
+                                <button type="submit" class="flex-grow bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1">
+                                    Confirmar Cita
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA: SUCCESS -->
+        <div id="view-success" class="view-section hidden fade-in min-h-[60vh] flex items-center justify-center px-4">
+            <div class="text-center max-w-md animate-fade-up glass-panel p-10 rounded-[3rem] shadow-2xl border border-white">
+                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 shadow-inner">
+                    <i class="fas fa-check text-4xl animate-bounce"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">¡Todo listo!</h2>
+                <p class="text-slate-500 mb-8">
+                    Tu cita ha sido confirmada para el<br/>
+                    <span class="text-teal-600 font-bold text-lg block mt-2 p-2 bg-teal-50 rounded-lg border border-teal-100">
+                        <span id="success-date"></span> a las <span id="success-time"></span>
+                    </span>
+                </p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="router('home')" class="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition-all">Volver al Inicio</button>
+                    <button onclick="router('booking'); resetBookingUI();" class="text-teal-600 font-medium hover:underline">Agendar otra cita</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="about" class="bg-slate-900 text-white pt-20 pb-10 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-2">
+                    <h3 class="text-3xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center"><i class="fas fa-tooth text-xl"></i></div>
+                        DentCare
+                    </h3>
+                    <p class="text-slate-400 mb-8 max-w-sm leading-relaxed">
+                        Transformamos la experiencia dental con tecnología humana y espacios diseñados para tu calma.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-600 hover:text-white transition-all"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-6">Contacto</h4>
+                    <ul class="space-y-4 text-slate-400">
+                        <li class="flex items-start gap-3">
+                            <i class="fas fa-map-marker-alt text-teal-500 mt-1"></i>
+                            <span>Av. Reforma 222, Piso 10<br/>Ciudad de México</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-phone text-teal-500"></i>
+                            <span>(55) 1234 - 5678</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-envelope text-teal-500"></i>
+                            <span>hola@dentcare.mx</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-6">Horarios</h4>
+                    <ul class="space-y-3 text-slate-400">
+                        <li class="flex justify-between border-b border-slate-800 pb-2"><span>Lun - Vie</span><span class="text-white">9:00 - 18:00</span></li>
+                        <li class="flex justify-between border-b border-slate-800 pb-2"><span>Sábados</span><span class="text-white">9:00 - 14:00</span></li>
+                        <li class="flex justify-between pb-2"><span>Domingos</span><span class="text-teal-500">Cerrado</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
+                <p>&copy; 2024 DentCare Clínica Dental. Todos los derechos reservados.</p>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white transition-colors">Privacidad</a>
+                    <a href="#" class="hover:text-white transition-colors">Términos</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIGURACIÓN
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ESTADO GLOBAL
+        let currentUser = null;
+        let allAppointments = [];
+        let selectedDate = null;
+        let selectedTime = null;
+
+        // --- INICIALIZACIÓN ---
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Error", error);
+                showNotification("Error de conexión", "error");
+            }
+        }
+
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                startRealtimeListener();
+            }
+        });
+
+        // --- FIREBASE LISTENER ---
+        function startRealtimeListener() {
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+            
+            onSnapshot(colRef, (snapshot) => {
+                allAppointments = snapshot.docs.map(doc => doc.data());
+                if (selectedDate) {
+                    renderTimeSlots(selectedDate);
+                }
+            }, (error) => {
+                console.error("Error fetching data:", error);
+            });
+        }
+
+        // --- UI RENDER FUNCTIONS ---
+
+        function renderDates() {
+            const container = document.getElementById('dates-container');
+            container.innerHTML = '';
+            
+            const today = new Date();
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                
+                if (d.getDay() === 0) continue; 
+
+                const dateStr = d.toISOString().split('T')[0];
+                const dayName = days[d.getDay()];
+                const dayNum = d.getDate();
+                const monthName = months[d.getMonth()];
+
+                const btn = document.createElement('button');
+                btn.className = `date-card group flex-shrink-0 w-24 h-32 rounded-2xl bg-white border border-slate-100 flex flex-col items-center justify-between snap-center cursor-pointer overflow-hidden`;
+                
+                // Diseño de "Hoja de Calendario"
+                btn.innerHTML = `
+                    <div class="date-card-header w-full py-2 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider text-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
+                        ${monthName}
+                    </div>
+                    <div class="flex-grow flex flex-col items-center justify-center py-2">
+                        <span class="text-3xl font-bold text-slate-800 group-hover:text-teal-600 transition-colors">${dayNum}</span>
+                        <span class="text-xs font-medium text-slate-400 mt-1">${dayName}</span>
+                    </div>
+                `;
+                
+                btn.onclick = () => selectDate(dateStr, btn);
+                btn.dataset.date = dateStr;
+                container.appendChild(btn);
+            }
+        }
+
+        window.scrollDates = function(direction) {
+            const container = document.getElementById('dates-container');
+            const scrollAmount = 200;
+            if (direction === 'left') container.scrollLeft -= scrollAmount;
+            else container.scrollLeft += scrollAmount;
+        }
+
+        window.selectDate = function(dateStr, btnElement) {
+            selectedDate = dateStr;
+            selectedTime = null;
+            
+            document.querySelectorAll('.date-card').forEach(b => b.classList.remove('selected'));
+            btnElement.classList.add('selected');
+
+            const timeSection = document.getElementById('time-section');
+            timeSection.classList.remove('hidden');
+            setTimeout(() => {
+                timeSection.classList.remove('opacity-0');
+                timeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            document.getElementById('booking-form').classList.add('hidden', 'opacity-0');
+
+            renderTimeSlots(dateStr);
+        }
+
+        function renderTimeSlots(dateStr) {
+            const container = document.getElementById('slots-container');
+            container.innerHTML = '';
+
+            const times = ["09:00", "10:00", "11:00", "12:00", "13:00", "15:00", "16:00", "17:00", "18:00"];
+
+            // Fade in animation for slots
+            let delay = 0;
+
+            times.forEach(time => {
+                const isTaken = allAppointments.some(appt => appt.date === dateStr && appt.time === time);
+                
+                const btn = document.createElement('button');
+                btn.className = `slot-btn py-3 px-4 rounded-xl text-sm font-bold border border-slate-200 bg-white text-slate-600 w-full animate-fade-up`;
+                btn.style.animationDelay = `${delay}ms`;
+                delay += 50;
+
+                if (isTaken) {
+                    btn.classList.add('taken');
+                    btn.disabled = true;
+                    btn.textContent = time; 
+                } else {
+                    btn.textContent = time;
+                    btn.onclick = () => selectTime(time, btn);
+                    if (selectedTime === time) {
+                        btn.classList.add('selected');
+                    }
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        window.selectTime = function(time, btnElement) {
+            selectedTime = time;
+            
+            document.querySelectorAll('.slot-btn').forEach(b => {
+                if (!b.disabled) b.classList.remove('selected');
+            });
+            btnElement.classList.add('selected');
+
+            const form = document.getElementById('booking-form');
+            form.classList.remove('hidden');
+            setTimeout(() => {
+                form.classList.remove('opacity-0');
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // --- SUBMIT ---
+        const form = document.getElementById('booking-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser || !selectedDate || !selectedTime) return;
+
+            const loader = document.getElementById('booking-loader');
+            loader.classList.remove('hidden');
+
+            const isTaken = allAppointments.some(appt => appt.date === selectedDate && appt.time === selectedTime);
+            if (isTaken) {
+                loader.classList.add('hidden');
+                showNotification("¡Ups! Alguien ganó ese horario.", "error");
+                renderTimeSlots(selectedDate);
+                return;
+            }
+
+            const name = document.getElementById('input-name').value;
+            const phone = document.getElementById('input-phone').value;
+            const reason = document.getElementById('input-reason').value;
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), {
+                    date: selectedDate,
+                    time: selectedTime,
+                    patientName: name,
+                    patientPhone: phone,
+                    reason: reason,
+                    createdAt: new Date().toISOString(),
+                    userId: currentUser.uid
+                });
+
+                document.getElementById('success-date').textContent = selectedDate;
+                document.getElementById('success-time').textContent = selectedTime;
+                router('success');
+                resetBookingUI();
+
+            } catch (err) {
+                console.error(err);
+                showNotification("Error al guardar.", "error");
+            } finally {
+                loader.classList.add('hidden');
+            }
+        });
+
+        // --- UTILS ---
+        
+        window.router = function(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) {
+                target.classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            if (viewName === 'booking') {
+                renderDates();
+            }
+        }
+
+        window.toggleMenu = function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        window.resetBookingUI = function() {
+            selectedDate = null;
+            selectedTime = null;
+            document.getElementById('booking-form').reset();
+            document.getElementById('booking-form').classList.add('hidden');
+            document.getElementById('time-section').classList.add('hidden');
+        }
+
+        window.showNotification = function(msg, type = 'info') {
+            const notif = document.getElementById('notification');
+            const icon = document.getElementById('notif-icon');
+            const title = document.getElementById('notif-title');
+            const message = document.getElementById('notif-message');
+            const content = document.getElementById('notif-content');
+            
+            message.textContent = msg;
+            
+            if (type === 'error') {
+                icon.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500"></i>';
+                icon.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-red-100";
+                title.textContent = "Error";
+                content.className = "px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 bg-white border-l-4 border-red-500";
+            } else {
+                icon.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+                icon.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-green-100";
+                title.textContent = "Éxito";
+                content.className = "px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 bg-white border-l-4 border-green-500";
+            }
+
+            notif.classList.remove('hidden');
+            setTimeout(() => {
+                notif.classList.remove('translate-y-[-100%]', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                notif.classList.add('translate-y-[-100%]', 'opacity-0');
+                setTimeout(() => notif.classList.add('hidden'), 500);
+            }, 3000);
+        }
+
+        // Start App
+        renderDates();
+    </script>
+</body>
+</html>
